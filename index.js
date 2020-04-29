@@ -1,5 +1,6 @@
 const config = {
     fps: 60,
+    lastFrameTime: Date.now(),
     width: 450,
     height: 600,
 
@@ -166,25 +167,35 @@ var bottom = {
     collided: false,
 
     update () {
-        if (game.currentState !== game.states.score) {
-            this.x -= 2;
-        }
+        window.requestAnimationFrame(update);
 
-        if (this.x === -sprites.bottom.width) {
-            this.x = 0;
-        }
+        let { fps, lastFrameTime } = config;
 
-        this.draw();
+        let now = Date.now();
+        let delta = now - lastFrameTime;
+        let interval = 1000 / fps;
+        
+        if (delta > interval) {
+            lastFrameTime = now - (delta % interval);
 
-        if (this.collision()) {
-            if (game.currentState === game.states.running) {
-                sounds.play('hit');
+            if (game.currentState !== game.states.score) {
+                this.x -= 2;
             }
 
-            game.stop();
-        }
+            if (this.x === -sprites.bottom.width) {
+                this.x = 0;
+            }
 
-        window.requestAnimationFrame(update);
+            this.draw();
+
+            if (this.collision()) {
+                if (game.currentState === game.states.running) {
+                    sounds.play('hit');
+                }
+
+                game.stop();
+            }
+        }
     },
 
     draw () {
@@ -492,12 +503,12 @@ function loadSounds() {
 }
 
 function initListeners() {
-    area.addEventListener('mousedown', function (event) {
+    area.addEventListener('mousedown', function () {
         action();
     });
 
     window.addEventListener('keydown', function (event) {
-        if (game.currentState === game.states.running && event.key === ' ') {
+        if (event.key === ' ') {
             action();
         }
     });
