@@ -1,6 +1,4 @@
 const config = {
-    fps: 60,
-    lastFrameTime: Date.now(),
     width: 450,
     height: 600,
 
@@ -167,34 +165,20 @@ var bottom = {
     collided: false,
 
     update () {
-        window.requestAnimationFrame(update);
+        if (game.currentState !== game.states.score) {
+            this.x -= 2;
+        }
 
-        let { fps, lastFrameTime } = config;
+        if (this.x === -sprites.bottom.width) {
+            this.x = 0;
+        }
 
-        let now = Date.now();
-        let delta = now - lastFrameTime;
-        let interval = 1000 / fps;
-        
-        if (delta > interval) {
-            lastFrameTime = now - (delta % interval);
-
-            if (game.currentState !== game.states.score) {
-                this.x -= 2;
+        if (this.collision()) {
+            if (game.currentState === game.states.running) {
+                sounds.play('hit');
             }
 
-            if (this.x === -sprites.bottom.width) {
-                this.x = 0;
-            }
-
-            this.draw();
-
-            if (this.collision()) {
-                if (game.currentState === game.states.running) {
-                    sounds.play('hit');
-                }
-
-                game.stop();
-            }
+            game.stop();
         }
     },
 
@@ -229,7 +213,6 @@ var score = {
 
     update () {
         this.current++;
-        this.draw();
         sounds.play('point');
     },
 
@@ -315,8 +298,6 @@ var bird = {
             this.speed += this.gravity;
             this.y += this.speed;
         }
-
-        this.draw();
     },
 
     draw () {
@@ -388,9 +369,7 @@ var pipes = {
 
         let collided = false;
 
-        for (let i = 0; i < length; i++) {
-            let current = this.collection[i];
-
+        for (let current of this.collection) {
             if (current.x <= -current.width) {
                 this.collection.splice(0, 1);
                 i--;
@@ -400,8 +379,6 @@ var pipes = {
             if (game.currentState === game.states.running) {
                 current.x -= 2;
             }
-
-            this.draw(current);
 
             if (this.collision(current)) {
                 collided = true;
@@ -421,9 +398,11 @@ var pipes = {
         }
     },
 
-    draw (pipe) {
-        areaContext.drawImage(sprites[`pipe${this.variation}Inverted`], pipe.x, -sprites[`pipe${this.variation}`].height + pipe.y);
-        areaContext.drawImage(sprites[`pipe${this.variation}`], pipe.x, pipe.y + this.gap);
+    draw () {
+        for (let pipe of this.collection) {
+            areaContext.drawImage(sprites[`pipe${this.variation}Inverted`], pipe.x, -sprites[`pipe${this.variation}`].height + pipe.y);
+            areaContext.drawImage(sprites[`pipe${this.variation}`], pipe.x, pipe.y + this.gap);
+        }
     },
 
     collision (pipe) {
@@ -458,6 +437,7 @@ var pipes = {
 const panel = document.getElementById('panel');
 const area = document.createElement('canvas');
 const areaContext = area.getContext('2d');
+const requestAnimFrame = requestAnimationFrameSelector();
 
 area.width = config.width;
 area.height = config.height;
@@ -503,26 +483,25 @@ function loadSounds() {
 }
 
 function initListeners() {
-    area.addEventListener('mousedown', function () {
-        action();
-    });
+    area.addEventListener('pointerdown', action);
 
     window.addEventListener('keydown', function (event) {
         if (event.key === ' ') {
-            action();
+            action(event);
         }
     });
 }
 
-function action() {
+function action(event) {
     if (game.currentState === game.states.score) {
         let areaRect = area.getBoundingClientRect();
-
+        
         if (
-            event.clientX >= areaRect.x + area.offsetLeft + score.playButton.x &&
-            event.clientX <= areaRect.x + area.offsetLeft + score.playButton.x + sprites.play.width &&
-            event.clientY >= areaRect.y + area.offsetTop + score.playButton.y &&
-            event.clientY <= areaRect.y + area.offsetTop + score.playButton.y + sprites.play.height
+            event.type === 'keydown'
+            || event.clientX >= areaRect.x + area.offsetLeft + score.playButton.x
+            && event.clientX <= areaRect.x + area.offsetLeft + score.playButton.x + sprites.play.width
+            && event.clientY >= areaRect.y + area.offsetTop + score.playButton.y
+            && event.clientY <= areaRect.y + area.offsetTop + score.playButton.y + sprites.play.height
         ) {
             game.restart();
             return;
@@ -537,11 +516,16 @@ function action() {
 }
 
 function update() {
-    clear();
-    background.draw();
     pipes.update();
     bird.update();
     bottom.update();
+
+    clear();
+
+    background.draw();
+    pipes.draw();
+    bottom.draw();
+    bird.draw();
 
     if (game.currentState === game.states.score) {
         score.drawBestScore();
@@ -552,8 +536,20 @@ function update() {
     }
 
     game.frames++;
+    requestAnimFrame(update);
 }
 
 function clear() {
     areaContext.clearRect(0, 0, config.width, config.height);
+}
+
+function requestAnimationFrameSelector()
+{
+    return (
+        window.requestAnimationFrame
+        || window.webkitRequestAnimationFrame
+        || window.mozRequestAnimationFrame
+        || window.oRequestAnimationFrame
+        || window.msRequestAnimationFrame
+    );
 }
