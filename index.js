@@ -518,11 +518,9 @@ function action(event) {
 }
 
 function update() {
-    requestAnimFrame(update);
-
     let now = Date.now();
     let delta = now - config.lastFrameTime;
-    let interval = Math.min(1000 / config.fps);
+    let interval = 1000 / config.fps;
 
     if (delta > interval) {
         config.lastFrameTime = now - (delta % interval);
@@ -548,6 +546,8 @@ function update() {
 
         game.frames++;
     }
+
+    requestAnimFrame(update);
 }
 
 function clear() {
