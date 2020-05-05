@@ -1,4 +1,6 @@
 const config = {
+    fps: 60,
+    lastFrameTime: Date.now(),
     width: 450,
     height: 600,
 
@@ -358,8 +360,6 @@ var pipes = {
     variation: 'Green',
 
     update () {
-        let length = this.collection.length;
-
         if (game.currentState === game.states.running && game.frames % 100 === 0) {
             this.collection.push({
                 x: config.width,
@@ -516,27 +516,38 @@ function action(event) {
 }
 
 function update() {
-    pipes.update();
-    bird.update();
-    bottom.update();
-
-    clear();
-
-    background.draw();
-    pipes.draw();
-    bottom.draw();
-    bird.draw();
-
-    if (game.currentState === game.states.score) {
-        score.drawBestScore();
-    } else if (game.currentState === game.states.home) {
-        home.draw();
-    } else {
-        score.draw();
-    }
-
-    game.frames++;
     requestAnimFrame(update);
+
+    let now = Date.now();
+    let delta = now - config.lastFrameTime;
+    let interval = Math.min(1000 / config.fps);
+
+    if (delta > interval) {
+        config.lastFrameTime = now - (delta % interval);
+
+        pipes.update();
+        bird.update();
+        bottom.update();
+
+        clear();
+
+        background.draw();
+        pipes.draw();
+        bottom.draw();
+        bird.draw();
+
+        if (game.currentState === game.states.score) {
+            score.drawBestScore();
+        } else if (game.currentState === game.states.home) {
+            home.draw();
+        } else {
+            score.draw();
+        }
+
+        game.frames++;
+
+        requestAnimFrame(update);
+    }
 }
 
 function clear() {
