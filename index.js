@@ -207,7 +207,7 @@ var bottom = {
 
 var score = {
     current: 0,
-    best: 0,
+    best: localStorage.getItem('bestScore'),
     playButton: {
         x: 0,
         y: 0
@@ -260,6 +260,8 @@ var score = {
         };
 
         if (this.current > this.best) {
+            localStorage.setItem('bestScore', this.current);
+
             this.best = this.current;
         }
 
@@ -545,8 +547,6 @@ function update() {
         }
 
         game.frames++;
-
-        requestAnimFrame(update);
     }
 }
 
