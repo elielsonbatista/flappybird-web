@@ -72,7 +72,7 @@ const config = {
 (async () => {
     try {
         await loadSprites();
-        loadSounds();
+        await loadSounds();
         initListeners();
 
         game.start();
@@ -149,9 +149,11 @@ var background = {
 }
 
 var sounds = {
+    list: {},
+
     play (sound) {
-        this[sound].currentTime = 0;
-        this[sound].play();
+        this.list[sound].currentTime = 0;
+        this.list[sound].play();
     }
 };
 
@@ -391,7 +393,7 @@ var pipes = {
             if (game.currentState === game.states.running) {
                 sounds.play('hit');
 
-                setTimeout(function () {
+                setTimeout(() => {
                     sounds.play('die');
                 }, 350);
 
@@ -453,21 +455,22 @@ function loadSprites() {
         let current = new Image();
         current.src = `sprites/${config.sprites[key]}.png`;
 
-        current.onload = function () {
+        current.onload = () => {
             sprites[key] = current;
         }
     }
 
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
         let timeout = 0;
 
-        let interval = setInterval(function () {
+        let interval = setInterval(() => {
             if (Object.keys(sprites).length === keys.length) {
                 clearInterval(interval);
                 resolve();
             }
 
             if (timeout === 10) {
+                clearInterval(interval);
                 reject('Was not possible to load the sprites');
             }
 
@@ -480,14 +483,36 @@ function loadSounds() {
     let keys = Object.keys(config.sounds);
 
     for (let key of keys) {
-        sounds[key] = new Audio(`sounds/${key}.wav`);
+        let current = new Audio(`sounds/${key}.wav`);
+
+        current.oncanplaythrough = () => {
+            sounds.list[key] = current;
+        }
     }
+
+    return new Promise((resolve, reject) => {
+        let timeout = 0;
+
+        let interval = setInterval(() => {
+            if (Object.keys(sounds.list).length === keys.length) {
+                clearInterval(interval);
+                resolve();
+            }
+
+            if (timeout === 10) {
+                clearInterval(interval);
+                reject('Was not possible to load the sounds');
+            }
+
+            timeout++;
+        }, 1000);
+    });
 }
 
 function initListeners() {
     area.addEventListener('pointerdown', action);
 
-    window.addEventListener('keydown', function (event) {
+    window.addEventListener('keydown', (event) => {
         if (event.key === ' ') {
             action(event);
         }
