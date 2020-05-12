@@ -1,6 +1,7 @@
 const config = {
     fps: 60,
     lastFrameTime: Date.now(),
+    framerate: 1000 / 60,
     width: 450,
     height: 600,
 
@@ -75,6 +76,8 @@ const config = {
         await loadSounds();
         initListeners();
 
+        config.framerate = 1000 / config.fps;
+
         game.start();
     } catch (error) {
         console.log(error);
@@ -144,7 +147,7 @@ var background = {
         ];
 
         this.variation = types[Math.round(Math.random() * 1)];
-        area.style.backgroundColor = this.variation === 'Day' ? '#4dc1cb' : '#008793';
+        area.style.backgroundColor = this.variation === 'Day' ? '#4dc1cb' : '#008d95';
     }
 }
 
@@ -209,7 +212,7 @@ var bottom = {
 
 var score = {
     current: 0,
-    best: localStorage.getItem('bestScore'),
+    best: localStorage.getItem('bestScore') || 0,
     playButton: {
         x: 0,
         y: 0
@@ -545,10 +548,9 @@ function action(event) {
 function update() {
     let now = Date.now();
     let delta = now - config.lastFrameTime;
-    let interval = 1000 / config.fps;
 
-    if (delta > interval) {
-        config.lastFrameTime = now - (delta % interval);
+    if (delta > config.framerate) {
+        config.lastFrameTime = now - (delta % config.framerate);
 
         pipes.update();
         bird.update();
