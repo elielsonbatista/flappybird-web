@@ -1,7 +1,4 @@
 const config = {
-    fps: 60,
-    lastFrameTime: Date.now(),
-    framerate: 1000 / 60,
     width: 450,
     height: 600,
 
@@ -76,8 +73,6 @@ const config = {
         await loadSounds();
         initListeners();
 
-        config.framerate = 1000 / config.fps;
-
         game.start();
     } catch (error) {
         console.log(error);
@@ -147,7 +142,7 @@ var background = {
         ];
 
         this.variation = types[Math.round(Math.random() * 1)];
-        area.style.backgroundColor = this.variation === 'Day' ? '#4dc1cb' : '#008d95';
+        area.style.backgroundColor = this.variation === 'Day' ? '#4ec0ca' : '#008793';
     }
 }
 
@@ -444,7 +439,6 @@ var pipes = {
 const panel = document.getElementById('panel');
 const area = document.createElement('canvas');
 const areaContext = area.getContext('2d');
-const requestAnimFrame = requestAnimationFrameSelector();
 
 area.width = config.width;
 area.height = config.height;
@@ -546,48 +540,30 @@ function action(event) {
 }
 
 function update() {
-    let now = Date.now();
-    let delta = now - config.lastFrameTime;
+    pipes.update();
+    bird.update();
+    bottom.update();
 
-    if (delta > config.framerate) {
-        config.lastFrameTime = now - (delta % config.framerate);
+    clear();
 
-        pipes.update();
-        bird.update();
-        bottom.update();
+    background.draw();
+    pipes.draw();
+    bottom.draw();
+    bird.draw();
 
-        clear();
-
-        background.draw();
-        pipes.draw();
-        bottom.draw();
-        bird.draw();
-
-        if (game.currentState === game.states.score) {
-            score.drawBestScore();
-        } else if (game.currentState === game.states.home) {
-            home.draw();
-        } else {
-            score.draw();
-        }
-
-        game.frames++;
+    if (game.currentState === game.states.score) {
+        score.drawBestScore();
+    } else if (game.currentState === game.states.home) {
+        home.draw();
+    } else {
+        score.draw();
     }
 
-    requestAnimFrame(update);
+    game.frames++;
+
+    window.requestAnimationFrame(update);
 }
 
 function clear() {
     areaContext.clearRect(0, 0, config.width, config.height);
-}
-
-function requestAnimationFrameSelector()
-{
-    return (
-        window.requestAnimationFrame
-        || window.webkitRequestAnimationFrame
-        || window.mozRequestAnimationFrame
-        || window.oRequestAnimationFrame
-        || window.msRequestAnimationFrame
-    );
 }
